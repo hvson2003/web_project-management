@@ -41,7 +41,7 @@ public class ProjectServiceImpl implements ProjectService {
         Chat projectChat = chatService.createChat(chat);
         savedProject.setChat(projectChat);
 
-        return null;
+        return createdProjcet;
     }
 
     @Override
