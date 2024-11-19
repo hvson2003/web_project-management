@@ -1,6 +1,7 @@
 package com.projectmanagement.controllers;
 
 import com.projectmanagement.configs.JwtProvider;
+import com.projectmanagement.dto.UserDTO;
 import com.projectmanagement.models.User;
 import com.projectmanagement.repositories.UserRepository;
 import com.projectmanagement.dto.requests.LoginRequest;
@@ -16,6 +17,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,23 +40,37 @@ public class AuthController {
     private SubscriptionService subscriptionService;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> createUserHandler(@RequestBody User user) throws Exception {
-        User isUserExist = userRepository.findByEmail(user.getEmail());
+    public ResponseEntity<AuthResponse> createUserHandler(
+            @Validated @RequestBody UserDTO userDTO, BindingResult result) throws Exception {
 
-        if(isUserExist!=null) {
+        // Kiểm tra nếu có lỗi validation
+        if (result.hasErrors()) {
+            String errorMessages = result.getAllErrors().stream()
+                    .map(error -> error.getDefaultMessage())
+                    .reduce((msg1, msg2) -> msg1 + ", " + msg2)
+                    .orElse("Invalid data");
+            return new ResponseEntity<>(new AuthResponse(errorMessages), HttpStatus.BAD_REQUEST);
+        }
+
+        // Kiểm tra xem email đã tồn tại hay chưa
+        User isUserExist = userRepository.findByEmail(userDTO.getEmail());
+        if (isUserExist != null) {
             throw new Exception("Email already exist with another account!");
         }
 
+        // Tạo đối tượng User mới từ UserDTO
         User createUser = new User();
-        createUser.setPassword(passwordEncoder.encode(user.getPassword()));
-        createUser.setEmail(user.getEmail());
-        createUser.setFullName(user.getFullName());
+        createUser.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        createUser.setEmail(userDTO.getEmail());
+        createUser.setFullName(userDTO.getFullName());
 
+        // Lưu user vào cơ sở dữ liệu
         User savedUser = userRepository.save(createUser);
 
+        // Tạo subscription cho user
         subscriptionService.createSubscription(savedUser);
 
-        Authentication authentication = new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword());
+        Authentication authentication = new UsernamePasswordAuthenticationToken(userDTO.getEmail(), userDTO.getPassword());
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         String jwt = JwtProvider.generateToken(authentication);
