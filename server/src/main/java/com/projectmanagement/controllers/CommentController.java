@@ -7,6 +7,7 @@ import com.projectmanagement.models.User;
 import com.projectmanagement.services.CommentService;
 import com.projectmanagement.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -51,8 +52,10 @@ public class CommentController {
     }
 
     @GetMapping("/{issueId}")
-    public ResponseEntity<List<Comment>> getCommentsByIssueId(@PathVariable Long issueId) {
-        List<Comment> comments = commentService.findCommentByIssueId(issueId);
-        return new ResponseEntity<>(comments, HttpStatus.OK);
+    public Page<Comment> getCommentsByIssueId(
+            @PathVariable Long issueId,
+            @RequestParam int page,
+            @RequestParam int size) {
+        return commentService.findCommentByIssueId(issueId, page, size);
     }
 }

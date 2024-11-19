@@ -7,10 +7,12 @@ import com.projectmanagement.repositories.CommentRepository;
 import com.projectmanagement.repositories.IssueRepository;
 import com.projectmanagement.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -76,7 +78,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public List<Comment> findCommentByIssueId(Long issueId) {
-        return commentRepository.findCommentByIssueId(issueId);
-    }
-}
+    public Page<Comment> findCommentByIssueId(Long issueId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return commentRepository.findCommentByIssueId(issueId, pageable);
+    }}
